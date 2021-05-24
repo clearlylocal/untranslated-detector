@@ -17,9 +17,9 @@ const stored: typeof init =
 	JSON.parse(localStorage.getItem('form') ?? 'null') ?? init
 
 export const App = () => {
-	const { register, watch,  handleSubmit } = useForm()
+	const { register, watch, handleSubmit } = useForm()
 
-	const changeHandler = data => {
+	const changeHandler = (data: any) => {
 		localStorage.setItem('form', JSON.stringify(data))
 	}
 
@@ -31,7 +31,10 @@ export const App = () => {
 
 	const commentTemplate: string = watch('cmtmp') ?? stored.cmtmp
 
-	const files: FileList = watch('file') ?? (([] as any) as FileList)
+	const files: FileList = useMemo(
+		() => watch('file') ?? ([] as any as FileList),
+		[watch],
+	)
 
 	const [workbook, setWorkbook] = useState<xlsx.WorkBook | null>(null)
 
@@ -97,7 +100,7 @@ export const App = () => {
 						row[commentsColHeading],
 						commentTemplate.replace(
 							'{{words}}',
-							omitted.join(', '),
+							omitted.map(x => `“${x}”`).join(', '),
 						),
 					]
 						.filter(Boolean)
@@ -120,6 +123,8 @@ export const App = () => {
 		commentTemplate,
 		sheetName,
 	])
+
+	;(window as any).parsed = parsed
 
 	return (
 		<form onChange={handleSubmit(changeHandler)}>

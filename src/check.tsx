@@ -1,14 +1,24 @@
-const WORD_REGEX = /([\p{Letter}\p{Mark}]+)/gu
+// used with `test` - can't use `g` flag or becomes stateful
+const WORD_REGEX = /([\p{Letter}\p{Mark}]+)/u
+
+const STRIP_REGEX = /%\d\$\w|<[^>]+>/g
 const EXCLUDE_REGEX = /[%${}[\]#:<>]/
-const MIN_LENGTH_ANYCASE = 2
-const MIN_LENGTH_LOWERCASE = 3
+const MIN_LENGTH_ANY_CASE = 2
+const MIN_LENGTH_LOWER_CASE = 3
 
 export function check(src: string, trg: string, comment: string) {
-	const srcSepsAndWords = src.split(WORD_REGEX)
+	const strippedSrc = src.replace(STRIP_REGEX, '\x1e') // record separator
+	const strippedTrg = trg.replace(STRIP_REGEX, '\x1f') // unit separator
+	// record separator and unit separator are arbitrary, but must
+	// a) never be present in translatable content,
+	// b) not match WORD_REGEX,
+	// c) be different from each other to avoid false matches
+
+	const srcSepsAndWords = strippedSrc.split(WORD_REGEX)
 
 	const iter = srcSepsAndWords.entries()[Symbol.iterator]()
 
-	const dupes: string[] = []
+	let dupes: string[] = []
 
 	while (true) {
 		let n = iter.next()
@@ -22,7 +32,7 @@ export function check(src: string, trg: string, comment: string) {
 			continue
 		}
 
-		if (trg.includes(seg)) {
+		if (strippedTrg.toLowerCase().includes(seg.toLowerCase())) {
 			let strs = [seg]
 
 			while (true) {
@@ -33,7 +43,11 @@ export function check(src: string, trg: string, comment: string) {
 				// prettier-ignore
 				const [/* idx */, nextSeg] = n.value;
 
-				if (trg.includes(strs.join('') + nextSeg)) {
+				if (
+					strippedTrg
+						.toLowerCase()
+						.includes((strs.join('') + nextSeg).toLowerCase())
+				) {
 					strs.push(nextSeg)
 				} else {
 					break
@@ -54,10 +68,10 @@ export function check(src: string, trg: string, comment: string) {
 		}
 	}
 
-	return dupes.filter(dupe => {
+	return [...new Set(dupes)].filter(dupe => {
 		const meetsMinLength =
-			dupe.length >= MIN_LENGTH_LOWERCASE ||
-			(dupe !== dupe.toLowerCase() && dupe.length >= MIN_LENGTH_ANYCASE)
+			dupe.length >= MIN_LENGTH_LOWER_CASE ||
+			(dupe !== dupe.toLowerCase() && dupe.length >= MIN_LENGTH_ANY_CASE)
 
 		return (
 			meetsMinLength &&
