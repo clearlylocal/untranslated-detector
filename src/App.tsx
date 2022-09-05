@@ -3,6 +3,21 @@ import { useForm } from 'react-hook-form'
 import './App.css'
 import { check } from './check'
 import ExcelJS from 'exceljs'
+import { Footer } from './components/Footer'
+
+const toLetter = (num: number) => {
+	const x = String.fromCodePoint(num + 'A'.codePointAt(0) - 1)
+
+	return !/[^A-Z]/.test(x) ? x : 'A'
+}
+
+const toNumber = (str: string) => {
+	const x = /\D/.test(str)
+		? str.toUpperCase().codePointAt(0) - 'A'.codePointAt(0) + 1
+		: Number(str)
+
+	return isNaN(x) ? 1 : x
+}
 
 const init = {
 	s: 9,
@@ -34,6 +49,18 @@ const suffixize = (filename: string, suffix: string) => {
 	)
 }
 
+const flattenRichText = (x: any) => {
+	if (typeof x === 'string') {
+		return x
+	}
+
+	if (x.richText) {
+		return x.richText.map(({ text }) => text).join('')
+	}
+
+	return String(x)
+}
+
 const parseExcelFile = async (
 	files: FileList,
 	commentTemplate: string,
@@ -60,9 +87,9 @@ const parseExcelFile = async (
 				workbook.worksheets.forEach((sheet) => {
 					sheet.eachRow((row, _rowNumber) => {
 						const omitted = check(
-							row.values[Col.Src] ?? '',
-							row.values[Col.Trg] ?? '',
-							row.values[Col.Comments] ?? '',
+							flattenRichText(row.values[Col.Src] ?? ''),
+							flattenRichText(row.values[Col.Trg] ?? ''),
+							flattenRichText(row.values[Col.Comments] ?? ''),
 						)
 
 						if (omitted.length) {
@@ -99,15 +126,21 @@ export const App = () => {
 	const { register, watch, handleSubmit } = useForm()
 
 	const changeHandler = (data: any) => {
+		data = { ...data }
+
+		data.s = toNumber(data.s)
+		data.t = toNumber(data.t)
+		data.c = toNumber(data.c)
+
 		localStorage.setItem('form', JSON.stringify(data))
 	}
 
 	const commentTemplate: string = watch('cmtmp') ?? stored.cmtmp
 	const filenameSuffix: string = watch('suf') ?? stored.suf
 
-	const s: number = Number(watch('s') ?? stored.s)
-	const t: number = Number(watch('t') ?? stored.t)
-	const c: number = Number(watch('c') ?? stored.c)
+	const s: number = Number(toNumber(watch('s') ?? stored.s))
+	const t: number = Number(toNumber(watch('t') ?? stored.t))
+	const c: number = Number(toNumber(watch('c') ?? stored.c))
 
 	const files: FileList = useMemo(
 		() => watch('file') ?? ([] as any as FileList),
@@ -120,50 +153,92 @@ export const App = () => {
 	}, [files /* commentTemplate, filenameSuffix */])
 
 	return (
-		<form onChange={handleSubmit(changeHandler)}>
-			<label>
-				Comments template
-				<input
-					name='cmtmp'
-					defaultValue={stored.cmtmp}
-					ref={register}
-				/>
-			</label>
-			<br />
-			<br />
-			<label>
-				Output filename suffix
-				<input name='suf' defaultValue={stored.suf} ref={register} />
-			</label>
-			<br />
-			<br />
-			<label>
-				Column numbers
-				<input
-					type='number'
-					name='s'
-					defaultValue={stored.s}
-					ref={register}
-				/>
-				<input
-					type='number'
-					name='t'
-					defaultValue={stored.t}
-					ref={register}
-				/>
-				<input
-					type='number'
-					name='c'
-					defaultValue={stored.c}
-					ref={register}
-				/>
-			</label>
-			<br />
-			<br />
-			<label>
-				Upload file (XLSX)
-				<input type='file' name='file' multiple ref={register} />
-			</label>
-		</form>
+		<>
+			<main className='container'>
+				<h1>Untranslated Detector</h1>
+
+				<form onChange={handleSubmit(changeHandler)}>
+					<label>
+						Comments template
+						<input
+							name='cmtmp'
+							defaultValue={stored.cmtmp}
+							ref={register}
+						/>
+					</label>
+					<br />
+					<br />
+					<label>
+						Output filename suffix
+						<input
+							name='suf'
+							defaultValue={stored.suf}
+							ref={register}
+						/>
+					</label>
+					<br />
+					<br />
+					<fieldset>
+						<legend>Columns</legend>
+
+						<label>
+							Source column (eng)
+							<input
+								type='text'
+								name='s'
+								defaultValue={toLetter(
+									typeof stored.s === 'number'
+										? stored.s
+										: toNumber(stored.s),
+								)}
+								ref={register}
+							/>
+						</label>
+						<br />
+						<label>
+							Target column (e.g. th-rTH)
+							<input
+								type='text'
+								name='t'
+								defaultValue={toLetter(
+									typeof stored.t === 'number'
+										? stored.t
+										: toNumber(stored.t),
+								)}
+								ref={register}
+							/>
+						</label>
+						<br />
+						<label>
+							Comments column (for output)
+							<input
+								type='text'
+								name='c'
+								defaultValue={toLetter(
+									typeof stored.c === 'number'
+										? stored.c
+										: toNumber(stored.c),
+								)}
+								ref={register}
+							/>
+						</label>
+					</fieldset>
+
+					<br />
+					<br />
+					<label>
+						Upload file (XLSX)
+						<input
+							type='file'
+							name='file'
+							multiple
+							ref={register}
+						/>
+					</label>
+				</form>
+			</main>
+
+			<Footer className='container' />
+		</>
 	)
 }

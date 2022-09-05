@@ -10,6 +10,7 @@
 		"@types/node": "^12.20.6",
 		"@types/react": "^17.0.3",
 		"@types/react-dom": "^17.0.3",
+		"chota": "^0.8.0",
 		"react": "^17.0.2",
 		"react-dom": "^17.0.2",
 		"react-hook-form": "^6.15.5",
@@ -20,7 +21,7 @@
 	},
 	"scripts": {
 		"start": "react-scripts start",
-		"build": "react-scripts build",
+		"build": "./scripts/update-build-info.sh && react-scripts build",
 		"test": "react-scripts test",
 		"eject": "react-scripts eject",
 		"predeploy": "npm run build",

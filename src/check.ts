@@ -68,7 +68,7 @@ export function check(src: string, trg: string, comment: string) {
 		}
 	}
 
-	return [...new Set(dupes)].filter(dupe => {
+	return [...new Set(dupes)].filter((dupe) => {
 		const meetsMinLength =
 			dupe.length >= MIN_LENGTH_LOWER_CASE ||
 			(dupe !== dupe.toLowerCase() && dupe.length >= MIN_LENGTH_ANY_CASE)
