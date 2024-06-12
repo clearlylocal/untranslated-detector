@@ -21,9 +21,27 @@
 // 		})),
 // )
 
-export const bugReports = [
+export const bugReports: {
+	date: string;
+	cases: {
+		src: string;
+		trg: string;
+		__original?: string[];
+		expected: string[];
+	}[];
+}[] = [
 	{
-		date: '2021-05-24 16:11:02',
+		date: '2023-02-07T00:34:18.333Z',
+		cases: [
+			{
+				src: 'When switched to the background, videos will auto-play in PiP.',
+				trg: 'Όταν γίνει εναλλαγή στο παρασκήνιο, τα βίντεο θα αναπαράγονται αυτόματα σε εικόνα μέσα σε εικόνα (PiP).',
+				expected: ['PiP'],
+			},
+		],
+	},
+	{
+		date: '2021-05-24T16:11:02.000Z',
 		cases: [
 			{
 				src: 'Carlcare Service Hotline',
